@@ -84,7 +84,7 @@ Mixed language usage within every service:
 
 - Do not add non-AI Python services in v0.1.
 - Do not move incident grouping or core event-processing logic out of Java.
-- Keep AI worker asynchronous and downstream of `incident-created`.
+- Keep AI worker asynchronous and downstream of `incident-created`. 
 - Keep failure isolation: AI issues must not block ingestion or incident creation.
 
 ### Review Trigger
