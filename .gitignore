@@ -46,3 +46,7 @@ venv/
 .env
 .env.*
 !.env.example
+
+# IDEA files
+.idea/
+
