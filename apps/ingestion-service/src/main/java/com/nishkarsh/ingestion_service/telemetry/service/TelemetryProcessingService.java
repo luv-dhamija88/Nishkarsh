@@ -1,5 +1,9 @@
 package com.nishkarsh.ingestion_service.telemetry.service;
 
+import com.nishkarsh.ingestion_service.kafka.RawLogPublisher;
+import com.nishkarsh.ingestion_service.kafka.RawSpanPublisher;
+import com.nishkarsh.ingestion_service.telemetry.model.TelemetryLog;
+import com.nishkarsh.ingestion_service.telemetry.model.TelemetrySpan;
 import io.opentelemetry.proto.collector.logs.v1.ExportLogsServiceRequest;
 import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
 import io.opentelemetry.proto.common.v1.AnyValue;
@@ -8,8 +12,7 @@ import io.opentelemetry.proto.logs.v1.ResourceLogs;
 import io.opentelemetry.proto.trace.v1.ResourceSpans;
 import io.opentelemetry.proto.trace.v1.Span;
 import java.util.Map;
-import com.nishkarsh.ingestion_service.telemetry.model.TelemetryLog;
-import com.nishkarsh.ingestion_service.telemetry.model.TelemetrySpan;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -26,17 +29,23 @@ import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttribu
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TelemetryProcessingService {
+
+	private final RawLogPublisher rawLogPublisher;
+	private final RawSpanPublisher rawSpanPublisher;
 
 	public Mono<Void> processTraceExport(ExportTraceServiceRequest request) {
 		return Flux.fromIterable(request.getResourceSpansList())
 			.flatMap(this::processResourceSpan)
+			.flatMap(rawSpanPublisher::publish)
 			.then();
 	}
 
 	public Mono<Void> processLogsExport(ExportLogsServiceRequest request) {
 		return Flux.fromIterable(request.getResourceLogsList())
 			.flatMap(this::processResourceLogs)
+			.flatMap(rawLogPublisher::publish)
 			.then();
 	}
 
