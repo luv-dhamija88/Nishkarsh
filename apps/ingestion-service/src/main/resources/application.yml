@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: ingestion-service
+
+telemetry:
+  collector:
+    grpc:
+      port: 4317
+    enabled: true
+
+logging:
+  level:
+    com.nishkarsh.ingestion_service.telemetry: INFO

@@ -36,3 +36,41 @@ While most of the inheritance is fine, it also inherits unwanted elements like `
 To prevent this, the project POM contains empty overrides for these elements.
 If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
 
+## Linting
+
+This module uses Maven Checkstyle to enforce Java linting rules from `config/checkstyle/checkstyle.xml`.
+
+Run lint checks locally:
+
+```bash
+./mvnw checkstyle:check
+```
+
+Linting also runs automatically during:
+
+```bash
+./mvnw verify
+```
+
+## OTEL gRPC Collector
+
+`ingestion-service` now includes a custom OTLP collector over gRPC.
+
+- gRPC endpoint: `0.0.0.0:4317`
+- Trace service method: `opentelemetry.proto.collector.trace.v1.TraceService/Export`
+- Logs service method: `opentelemetry.proto.collector.logs.v1.LogsService/Export`
+- Health endpoint: `GET /telemetry/health`
+
+Collector behavior:
+
+- Receives OpenTelemetry trace and log export requests.
+- Maps standard semantic-convention attributes to internal telemetry models.
+- Keeps missing attributes as `null` (best-effort ingestion).
+- Processes payloads with reactive `Mono`/`Flux` flow.
+
+Quick checks:
+
+```bash
+mvn clean compile
+mvn -Dtest=TelemetryProcessingServiceTest test
+```
