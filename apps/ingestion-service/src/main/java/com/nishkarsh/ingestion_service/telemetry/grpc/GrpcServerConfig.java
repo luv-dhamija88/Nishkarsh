@@ -16,14 +16,17 @@ public class GrpcServerConfig {
 	private int grpcPort;
 
 	@Bean(destroyMethod = "shutdown")
-	public Server otelCollectorGrpcServer(OtlpTraceCollectorService traceCollectorService) throws IOException {
+	public Server otelCollectorGrpcServer(
+			OtlpTraceCollectorService traceCollectorService,
+			OtlpLogCollectorService logCollectorService) throws IOException {
 		Server server = NettyServerBuilder
 			.forPort(grpcPort)
 			.addService(traceCollectorService)
+			.addService(logCollectorService)
 			.build()
 			.start();
 
-		log.info("Custom OTEL gRPC collector started on port {}", grpcPort);
+		log.info("Custom OTEL gRPC collector started on port {} (trace + logs)", grpcPort);
 		return server;
 	}
 }

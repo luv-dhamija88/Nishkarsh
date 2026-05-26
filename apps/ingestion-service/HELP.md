@@ -54,15 +54,16 @@ Linting also runs automatically during:
 
 ## OTEL gRPC Collector
 
-`ingestion-service` now includes a custom OTLP trace collector over gRPC.
+`ingestion-service` now includes a custom OTLP collector over gRPC.
 
 - gRPC endpoint: `0.0.0.0:4317`
-- Service method: `opentelemetry.proto.collector.trace.v1.TraceService/Export`
+- Trace service method: `opentelemetry.proto.collector.trace.v1.TraceService/Export`
+- Logs service method: `opentelemetry.proto.collector.logs.v1.LogsService/Export`
 - Health endpoint: `GET /telemetry/health`
 
 Collector behavior:
 
-- Receives OpenTelemetry trace export requests.
+- Receives OpenTelemetry trace and log export requests.
 - Maps standard semantic-convention attributes to internal telemetry models.
 - Keeps missing attributes as `null` (best-effort ingestion).
 - Processes payloads with reactive `Mono`/`Flux` flow.

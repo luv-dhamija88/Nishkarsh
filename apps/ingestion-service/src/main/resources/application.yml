@@ -1,8 +1,7 @@
 spring:
   application:
     name: ingestion-service
-server:
-    port: 8081
+
 telemetry:
   collector:
     grpc:

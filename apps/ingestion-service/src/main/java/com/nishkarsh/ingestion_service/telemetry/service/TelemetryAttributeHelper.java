@@ -19,6 +19,24 @@ public final class TelemetryAttributeHelper {
 		}
 		return map;
 	}
+	public static String anyValueToString(AnyValue value) {
+		if (value == null) {
+			return null;
+		}
+		if (value.hasStringValue()) {
+			return emptyToNull(value.getStringValue());
+		}
+		if (value.hasIntValue()) {
+			return String.valueOf(value.getIntValue());
+		}
+		if (value.hasDoubleValue()) {
+			return String.valueOf(value.getDoubleValue());
+		}
+		if (value.hasBoolValue()) {
+			return String.valueOf(value.getBoolValue());
+		}
+		return null;
+	}
 
 	public static String getString(Map<String, AnyValue> map, String key) {
 		AnyValue value = map.get(key);

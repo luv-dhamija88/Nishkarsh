@@ -1,5 +1,21 @@
 package com.nishkarsh.ingestion_service.telemetry.service;
 
+import io.opentelemetry.proto.collector.logs.v1.ExportLogsServiceRequest;
+import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
+import io.opentelemetry.proto.common.v1.AnyValue;
+import io.opentelemetry.proto.logs.v1.LogRecord;
+import io.opentelemetry.proto.logs.v1.ResourceLogs;
+import io.opentelemetry.proto.trace.v1.ResourceSpans;
+import io.opentelemetry.proto.trace.v1.Span;
+import java.util.Map;
+import com.nishkarsh.ingestion_service.telemetry.model.TelemetryLog;
+import com.nishkarsh.ingestion_service.telemetry.model.TelemetrySpan;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttributeHelper.anyValueToString;
 import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttributeHelper.emptyToNull;
 import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttributeHelper.getBoolean;
 import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttributeHelper.getLong;
@@ -8,17 +24,6 @@ import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttribu
 import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttributeHelper.toHex;
 import static com.nishkarsh.ingestion_service.telemetry.service.TelemetryAttributeHelper.toMap;
 
-import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest;
-import io.opentelemetry.proto.common.v1.AnyValue;
-import io.opentelemetry.proto.trace.v1.ResourceSpans;
-import io.opentelemetry.proto.trace.v1.Span;
-import java.util.Map;
-import com.nishkarsh.ingestion_service.telemetry.model.TelemetrySpan;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 @Slf4j
 @Service
 public class TelemetryProcessingService {
@@ -26,6 +31,12 @@ public class TelemetryProcessingService {
 	public Mono<Void> processTraceExport(ExportTraceServiceRequest request) {
 		return Flux.fromIterable(request.getResourceSpansList())
 			.flatMap(this::processResourceSpan)
+			.then();
+	}
+
+	public Mono<Void> processLogsExport(ExportLogsServiceRequest request) {
+		return Flux.fromIterable(request.getResourceLogsList())
+			.flatMap(this::processResourceLogs)
 			.then();
 	}
 
@@ -42,6 +53,62 @@ public class TelemetryProcessingService {
 					nullSafe(tspan.getSpanMetadata() != null ? tspan.getSpanMetadata().getName() : null)
 				)));
 	}
+
+	private Flux<TelemetryLog> processResourceLogs(ResourceLogs resourceLogs) {
+		Map<String, AnyValue> resourceMap = toMap(resourceLogs.getResource().getAttributesList());
+		return Flux.fromIterable(resourceLogs.getScopeLogsList())
+			.flatMap(scopeLog -> Flux.fromIterable(scopeLog.getLogRecordsList())
+				.map(logRecord -> toTelemetryLog(resourceMap, logRecord))
+				.doOnNext(tlog -> log.info(
+					"received log traceId={} spanId={} service={} severity={} body={}",
+					nullSafe(tlog.getTraceId()),
+					nullSafe(tlog.getSpanId()),
+					nullSafe(tlog.getServiceName()),
+					nullSafe(tlog.getSeverityText()),
+					nullSafe(tlog.getBody())
+				)));
+	}
+
+	private TelemetryLog toTelemetryLog(Map<String, AnyValue> resourceMap, LogRecord logRecord) {
+		Map<String, AnyValue> logMap = toMap(logRecord.getAttributesList());
+		String body = anyValueToString(logRecord.getBody());
+		if (body == null) {
+			body = getString(logMap, "log.message");
+		}
+
+		return TelemetryLog.builder()
+			.traceId(toHex(logRecord.getTraceId()))
+			.spanId(toHex(logRecord.getSpanId()))
+			.timeUnixNano(logRecord.getTimeUnixNano())
+			.observedTimeUnixNano(logRecord.getObservedTimeUnixNano())
+			.severityNumber((long) logRecord.getSeverityNumberValue())
+			.severityText(emptyToNull(logRecord.getSeverityText()))
+			.body(body)
+			.eventName(getString(logMap, "event.name"))
+			.serviceName(getString(resourceMap, "service.name"))
+			.serviceNamespace(getString(resourceMap, "service.namespace"))
+			.serviceInstanceId(getString(resourceMap, "service.instance.id"))
+			.serviceVersion(getString(resourceMap, "service.version"))
+			.deploymentEnvironment(getString(resourceMap, "deployment.environment"))
+			.hostName(getString(resourceMap, "host.name"))
+			.hostId(getString(resourceMap, "host.id"))
+			.containerId(getString(resourceMap, "container.id"))
+			.k8sPodName(getString(resourceMap, "k8s.pod.name"))
+			.logMessage(getString(logMap, "log.message"))
+			.logLevel(getString(logMap, "log.level"))
+			.logLogger(getString(logMap, "log.logger"))
+			.exceptionType(getString(logMap, "exception.type"))
+			.exceptionMessage(getString(logMap, "exception.message"))
+			.exceptionStacktrace(getString(logMap, "exception.stacktrace"))
+			.threadName(getString(logMap, "thread.name"))
+			.threadId(getLong(logMap, "thread.id"))
+			.serverAddress(getString(logMap, "server.address"))
+			.clientAddress(getString(logMap, "client.address"))
+			.receivedTimestamp(System.currentTimeMillis())
+			.build();
+	}
+
+
 
 	private TelemetrySpan toTelemetrySpan(Map<String, AnyValue> resourceMap, Span span) {
 		Map<String, AnyValue> spanMap = toMap(span.getAttributesList());
@@ -184,3 +251,4 @@ public class TelemetryProcessingService {
 			.build();
 	}
 }
+
