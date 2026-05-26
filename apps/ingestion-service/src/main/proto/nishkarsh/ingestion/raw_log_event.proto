@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package nishkarsh.ingestion;
+
+option java_package = "com.nishkarsh.ingestion_service.kafka.proto";
+option java_outer_classname = "RawLogEventProto";
+option java_multiple_files = true;
+
+// Compact event published to the raw-logs Kafka topic.
+// Each field maps directly to the normalised TelemetryLog model.
+// Attributes captures the four high-signal span-level keys used for
+// incident grouping and AI context (environment, host, pod, thread).
+message RawLogEvent {
+  string event_id         = 1;
+  string trace_id         = 2;
+  string span_id          = 3;
+  string service_name     = 4;
+  string severity         = 5;
+  string message          = 6;
+  string body             = 7;
+  string exception_type   = 8;
+  string exception_message = 9;
+  string timestamp        = 10;
+  map<string, string> attributes = 11;
+}
+
