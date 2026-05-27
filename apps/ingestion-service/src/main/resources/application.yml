@@ -2,6 +2,19 @@ spring:
   application:
     name: ingestion-service
 
+nishkarsh:
+  kafka:
+    publisher:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      client-id: ${KAFKA_PUBLISHER_CLIENT_ID:${spring.application.name}-telemetry-publisher}
+      compression-type: ${KAFKA_PUBLISHER_COMPRESSION_TYPE:lz4}
+      acks: ${KAFKA_PUBLISHER_ACKS:all}
+      batch-size: ${KAFKA_PUBLISHER_BATCH_SIZE:65536}
+      linger-ms: ${KAFKA_PUBLISHER_LINGER_MS:25}
+      request-timeout-ms: ${KAFKA_PUBLISHER_REQUEST_TIMEOUT_MS:30000}
+      delivery-timeout-ms: ${KAFKA_PUBLISHER_DELIVERY_TIMEOUT_MS:120000}
+      max-in-flight-requests-per-connection: ${KAFKA_PUBLISHER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION:5}
+
 telemetry:
   collector:
     grpc:
@@ -11,3 +24,6 @@ telemetry:
 logging:
   level:
     com.nishkarsh.ingestion_service.telemetry: INFO
+
+server:
+    port: ${PORT:8081}

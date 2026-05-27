@@ -74,3 +74,15 @@ Quick checks:
 mvn clean compile
 mvn -Dtest=TelemetryProcessingServiceTest test
 ```
+
+## Kafka Publisher Configuration
+
+`ingestion-service` now exposes Kafka producer infrastructure for future telemetry/event publishers.
+
+- Compression: `lz4`
+- Key serializer: `StringSerializer`
+- Value serializer: `ByteArraySerializer`
+- Intended payload shape: protobuf messages serialized with `toByteArray()` before publishing
+
+Relevant properties live under `nishkarsh.kafka.publisher.*` in `src/main/resources/application.yml`.
+
