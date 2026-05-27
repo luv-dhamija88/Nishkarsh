@@ -24,3 +24,6 @@ telemetry:
 logging:
   level:
     com.nishkarsh.ingestion_service.telemetry: INFO
+
+server:
+    port: ${PORT:8081}
