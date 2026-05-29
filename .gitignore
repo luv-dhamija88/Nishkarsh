@@ -50,3 +50,5 @@ venv/
 # IDEA files
 .idea/
 
+out/
+
