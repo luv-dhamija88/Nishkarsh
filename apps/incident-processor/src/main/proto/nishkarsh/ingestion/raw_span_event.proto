@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package nishkarsh.ingestion;
+
+option java_package = "com.nishkarsh.incident_processor.kafka.proto";
+option java_outer_classname = "RawSpanEventProto";
+option java_multiple_files = true;
+
+message RawSpanEvent {
+  string event_id = 1;
+  string trace_id = 2;
+  string span_id = 3;
+  string parent_span_id = 4;
+  string service_name = 5;
+  string operation_name = 6;
+  int64 duration_ms = 7;
+  string status_code = 8;
+}
+
